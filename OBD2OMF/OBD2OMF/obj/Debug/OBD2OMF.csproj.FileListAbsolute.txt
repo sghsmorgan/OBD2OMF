@@ -1,0 +1,10 @@
+C:\TFS\OBD2OMF\OBD2OMF\obj\Debug\OBD2OMF.csproj.CoreCompileInputs.cache
+C:\TFS\OBD2OMF\OBD2OMF\bin\Debug\OBD2OMF.exe.config
+C:\TFS\OBD2OMF\OBD2OMF\bin\Debug\OBD2OMF.exe
+C:\TFS\OBD2OMF\OBD2OMF\bin\Debug\OBD2OMF.pdb
+C:\TFS\OBD2OMF\OBD2OMF\bin\Debug\Newtonsoft.Json.dll
+C:\TFS\OBD2OMF\OBD2OMF\bin\Debug\Newtonsoft.Json.xml
+C:\TFS\OBD2OMF\OBD2OMF\obj\Debug\OBD2OMF.csproj.CopyComplete
+C:\TFS\OBD2OMF\OBD2OMF\obj\Debug\OBD2OMF.exe
+C:\TFS\OBD2OMF\OBD2OMF\obj\Debug\OBD2OMF.pdb
+C:\TFS\OBD2OMF\OBD2OMF\obj\Debug\OBD2OMF.csprojAssemblyReference.cache
