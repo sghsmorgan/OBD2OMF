@@ -54,20 +54,18 @@
     <Compile Include="API\IngressClient.cs" />
     <Compile Include="API\LinksAndValues.cs" />
     <Compile Include="API\Message.cs" />
-    <Compile Include="OBDMessage.cs" />
     <Compile Include="Driver.cs" />
-    <Compile Include="OMFClient.cs" />
-    <Compile Include="OmfContainer.cs" />
-    <Compile Include="OmfContainerType.cs" />
-    <Compile Include="OmfData.cs" />
-    <Compile Include="OmfLinkType.cs" />
-    <Compile Include="OMFTypeProperty.cs" />
-    <Compile Include="OMFWriter.cs" />
+    <Compile Include="Logger.cs" />
+    <Compile Include="OBDMessage.cs" />
+    <Compile Include="OMFIngressHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Simulator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="config.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -52,6 +52,7 @@ namespace OBD2OMF
                     SimulateFuelPressure();
                     SimulateAirIntakeTemp();
                     SimulateThrottlePosition();
+                    Thread.Sleep(2500);
                 }
             }
         }
@@ -97,7 +98,7 @@ namespace OBD2OMF
                 {
                     if (_coolantTempValue < maxCoolantTemp)
                     {
-                        _coolantTempValue = _coolantTempValue + 10;
+                        _coolantTempValue = _coolantTempValue + 20;
                     }
                 };
                 coolantTimer.Start();
@@ -111,17 +112,12 @@ namespace OBD2OMF
         {
             if (!fuelTimer.Enabled)
             {
-                fuelTimer.Interval = TimeSpan.FromMinutes(1).TotalMilliseconds;
+                fuelTimer.Interval = TimeSpan.FromSeconds(30).TotalMilliseconds;
                 fuelTimer.Elapsed += delegate (object source, System.Timers.ElapsedEventArgs e)
                 {
                     if (_fuelLevelValue > 0)
                     {
                         _fuelLevelValue--;
-                        if (_fuelLevelValue <= 0)
-                        {
-                            Console.WriteLine("Out of gas. You should probably get some.");
-                            _keepGoing = false;
-                        }
                     }
                 };
                 fuelTimer.Start();
