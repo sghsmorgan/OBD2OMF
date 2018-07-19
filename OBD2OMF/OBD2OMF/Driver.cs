@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using IngressServiceAPI;
 using IngressServiceAPI.API;
 using System.Threading;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.IO;
 
 namespace OBD2OMF
 {
@@ -13,8 +16,11 @@ namespace OBD2OMF
     {
         private static volatile bool keepRunning = true;
         private static Simulator simulator;
+        private static Configuration configuration;
         static void Main(string[] args)
         {
+            ReadConfig();
+            OMFIngressHelper.CreateClients(configuration.OMFEndPoints);
             simulator = new Simulator();
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
@@ -33,19 +39,20 @@ namespace OBD2OMF
                 OBDPid.FuelPressurePID
             };
 
-            IngressClient client = new IngressClient(OMFVars.omfEndpoint, OMFVars.producerToken);
+            // IngressClient client = new IngressClient(configuration.OMFEndPoints[0].URL, configuration.OMFEndPoints[0].ProducerToken);
+            //client.UseCompression = true;
 
-            Container[] containers = DefineTypes(PIDs, client);
+            Container[] containers = DefineTypes(PIDs);
 
 
             while (Driver.keepRunning)
             {
                 List<OBDMessage> messages = GetOBDMessages(PIDs);
-                
-                Process(messages,containers,client);
+
+                Process(messages, containers);
 
                 Thread.Sleep(5000);
-                
+
 
             }
             Console.WriteLine("Collection End");
@@ -53,11 +60,14 @@ namespace OBD2OMF
 
         }
 
-        private static Container[] DefineTypes(List<String> pIDs, IngressClient client)
+        private static Container[] DefineTypes(List<String> pIDs)
         {
 
-            client.CreateTypes(new string[] { FleetStaticType.JsonSchema, VehicleStaticType.JsonSchema, ValueStaticType.JsonSchema });
-            client.CreateTypes(new string[] { MeasurementAttribute.JsonSchema });
+            //client.CreateTypes(new string[] { FleetStaticType.JsonSchema, VehicleStaticType.JsonSchema, ValueStaticType.JsonSchema });
+            //client.CreateTypes(new string[] { MeasurementAttribute.JsonSchema });
+            OMFIngressHelper.CreateTypesForAllEndPoints(new string[] { FleetStaticType.JsonSchema, VehicleStaticType.JsonSchema, ValueStaticType.JsonSchema });
+            OMFIngressHelper.CreateTypesForAllEndPoints(new string[] { MeasurementAttribute.JsonSchema });
+
             Container[] containers =
             {
                 new Container() {Id = OBDMessage.Measurements.Speed.ToString(), TypeId = nameof(MeasurementAttribute) },
@@ -69,15 +79,15 @@ namespace OBD2OMF
                 new Container() {Id= OBDMessage.Measurements.ThrottlePosition.ToString(), TypeId = nameof(MeasurementAttribute) }
 
             };
+            //client.CreateContainers(containers);
+            OMFIngressHelper.CreateContainersForAllEndPoints(containers);
 
-            client.CreateContainers(containers);
-
-            DefineAssets(pIDs, client, containers);
+            DefineAssets(pIDs, containers);
             return containers;
 
         }
 
-        private static void DefineAssets(List<string> pIDs, IngressClient client,Container[] containers)
+        private static void DefineAssets(List<string> pIDs, Container[] containers)
         {
             //send asset for fleet
             AssetLinkValues<FleetStaticType> assetFleet = new AssetLinkValues<FleetStaticType>()
@@ -85,17 +95,18 @@ namespace OBD2OMF
                 typeid = "Fleet",
                 Values = new List<FleetStaticType> { new FleetStaticType() { index = "SouthEastFleet", name = "SouthEastFleet" } }
             };
-            client.SendValuesAsync(new AssetLinkValues<FleetStaticType>[] { assetFleet
-    }).Wait();
+            //client.SendValuesAsync(new AssetLinkValues<FleetStaticType>[] { assetFleet }).Wait();
+            OMFIngressHelper.SendValuesToAllEndPointsAsync(new AssetLinkValues<FleetStaticType>[] { assetFleet }).Wait();
 
             //vehicle asset
             AssetLinkValues<VehicleStaticType> assetVehicle = new AssetLinkValues<VehicleStaticType>()
             {
                 typeid = "Vehicle",
-                Values = new List<VehicleStaticType> { new VehicleStaticType() { index = OMFVars.vehicleName, name = OMFVars.vehicleName } }
+                Values = new List<VehicleStaticType> { new VehicleStaticType() { index = configuration.VehicleName, name = configuration.VehicleName } }
             };
-            client.SendValuesAsync(new AssetLinkValues<VehicleStaticType>[] { assetVehicle
-}).Wait();
+            //client.SendValuesAsync(new AssetLinkValues<VehicleStaticType>[] { assetVehicle }).Wait();
+            OMFIngressHelper.SendValuesToAllEndPointsAsync(new AssetLinkValues<VehicleStaticType>[] { assetVehicle }).Wait();
+
             //Measurement Assets
             List<ValueStaticType> values = new List<ValueStaticType>();
             foreach (string pid in pIDs)
@@ -106,19 +117,20 @@ namespace OBD2OMF
             AssetLinkValues<ValueStaticType> assetValue = new AssetLinkValues<ValueStaticType>()
             {
                 typeid = "ValueStaticType",
-                Values = values            
+                Values = values
             };
-            
-            client.SendValuesAsync(new AssetLinkValues<ValueStaticType>[] { assetValue }).Wait();
 
-            List<AFLink<StaticElement,StaticElement>> aflinks = new List<AFLink<StaticElement, StaticElement>>();
+            //client.SendValuesAsync(new AssetLinkValues<ValueStaticType>[] { assetValue }).Wait();
+            OMFIngressHelper.SendValuesToAllEndPointsAsync(new AssetLinkValues<ValueStaticType>[] { assetValue }).Wait();
+
+            List<AFLink<StaticElement, StaticElement>> aflinks = new List<AFLink<StaticElement, StaticElement>>();
             AFLink<StaticElement, StaticElement> aFLink = new AFLink<StaticElement, StaticElement> { source = new StaticElement() { typeid = nameof(FleetStaticType), index = "_ROOT" }, target = new StaticElement() { typeid = nameof(FleetStaticType), index = "SouthEastFleet" } };
             aflinks.Add(aFLink);
-            aFLink  = new AFLink<StaticElement, StaticElement> { source = new StaticElement() { typeid = nameof(FleetStaticType), index = "SouthEastFleet" }, target = new StaticElement() { typeid = nameof(VehicleStaticType), index = OMFVars.vehicleName } };
+            aFLink = new AFLink<StaticElement, StaticElement> { source = new StaticElement() { typeid = nameof(FleetStaticType), index = "SouthEastFleet" }, target = new StaticElement() { typeid = nameof(VehicleStaticType), index = configuration.VehicleName } };
             aflinks.Add(aFLink);
-            foreach ( var v in values)
+            foreach (var v in values)
             {
-                aFLink = new AFLink<StaticElement, StaticElement> { source = new StaticElement() { typeid = nameof(VehicleStaticType), index = OMFVars.vehicleName }, target = new StaticElement() { typeid = nameof(ValueStaticType), index = v.index } };
+                aFLink = new AFLink<StaticElement, StaticElement> { source = new StaticElement() { typeid = nameof(VehicleStaticType), index = configuration.VehicleName }, target = new StaticElement() { typeid = nameof(ValueStaticType), index = v.index } };
                 aflinks.Add(aFLink);
             }
             //send asset parent-child links
@@ -127,25 +139,25 @@ namespace OBD2OMF
                 typeid = "__Link",
                 Values = aflinks
             };
+            //client.SendValuesAsync(new AssetLinkValues<AFLink<StaticElement, StaticElement>>[] { assetLink }).Wait();
+            OMFIngressHelper.SendValuesToAllEndPointsAsync(new AssetLinkValues<AFLink<StaticElement, StaticElement>>[] { assetLink }).Wait();
 
-            client.SendValuesAsync(new AssetLinkValues<AFLink<StaticElement, StaticElement>>[] { assetLink }).Wait();
+            List<AFLink<StaticElement, DynamicElement>> dataLinks = new List<AFLink<StaticElement, DynamicElement>>();
 
-            List<AFLink<StaticElement,DynamicElement >> dataLinks = new List<AFLink<StaticElement, DynamicElement>>();
-            
-            for(int i=0; i<containers.Length; i++)
+            for (int i = 0; i < containers.Length; i++)
             {
                 dataLinks.Add(new AFLink<StaticElement, DynamicElement>() { source = new StaticElement() { typeid = nameof(ValueStaticType), index = values[i].index }, target = new DynamicElement() { containerid = containers[i].Id } });
             }
-            AssetLinkValues<AFLink<StaticElement, DynamicElement >> dataLink = new AssetLinkValues<AFLink<StaticElement, DynamicElement>>()
+            AssetLinkValues<AFLink<StaticElement, DynamicElement>> dataLink = new AssetLinkValues<AFLink<StaticElement, DynamicElement>>()
             {
                 typeid = "__Link",
-                Values =dataLinks
+                Values = dataLinks
             };
-            client.SendValuesAsync(new AssetLinkValues<AFLink<StaticElement, DynamicElement>>[] { dataLink }).Wait();
-
+            //client.SendValuesAsync(new AssetLinkValues<AFLink<StaticElement, DynamicElement>>[] { dataLink }).Wait();
+            OMFIngressHelper.SendValuesToAllEndPointsAsync(new AssetLinkValues<AFLink<StaticElement, DynamicElement>>[] { dataLink }).Wait();
         }
 
-        private static void Process(List<OBDMessage> messages, Container[] containers, IngressClient client)
+        private static void Process(List<OBDMessage> messages, Container[] containers)
         {
             List<MeasurementAttribute> values = new List<MeasurementAttribute>();
 
@@ -157,13 +169,12 @@ namespace OBD2OMF
             }
 
             List<DataValues> dataValues = new List<DataValues>();
-            for(int i=0;i<containers.Length;i++)
+            for (int i = 0; i < containers.Length; i++)
             {
                 dataValues.Add(new DataValues() { ContainerId = containers[i].Id, Values = new List<MeasurementAttribute> { values[i] } });
             }
-
-            client.SendValuesAsync(dataValues.ToArray());
-
+            //client.SendValuesAsync(dataValues.ToArray());
+            OMFIngressHelper.SendValuesToAllEndPointsAsync(dataValues.ToArray()).Wait();
 
         }
 
@@ -204,15 +215,33 @@ namespace OBD2OMF
                     return OBDMessage.Measurements.NODATA;    //No data for given PID
             }
         }
+        private static void ReadConfig()
+        {
+            StreamReader reader = new StreamReader(".\\config.json");
+            string rawJson = reader.ReadToEnd();
+            reader.Close();
+            reader.Dispose();
+            configuration = JsonConvert.DeserializeObject<Configuration>(rawJson);
+        }
 
     }
 
-    public static class OMFVars
+
+
+
+    public class Configuration
     {
-        public static string omfEndpoint = @"https://abathon5520.osisoft.int:5470/ingress/messages";
-        public static string producerToken = @"uid=b2f7bfd6-08cf-4ba7-a01c-f2749be34757&crt=20180717195947978&sig=PKn45Ypzlh6Apqr5ZUmEwToCewC//yPlEQzyCujxyZo=";
-
-        public static string vehicleName = "Truck1";
-
+        public OMFEndPoint[] OMFEndPoints { get; set; }
+        public string VehicleName { get; set; }
+        public string FleetName { get; set; }
     }
+
+    public class OMFEndPoint
+    {
+        public string Name { get; set; }
+        public string URL { get; set; }
+        public string ProducerToken { get; set; }
+    }
+
+
 }

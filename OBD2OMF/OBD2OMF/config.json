@@ -1,0 +1,22 @@
+{
+  "OMFEndPoints": [
+    {
+      "name": "Andrew's OCS",
+      "url": "https://historianmain.osipi.com/api/omf",
+      "ProducerToken": "1/ff3fe56be58040d0a871a2e15f07d0f7/94c9f8fc1948401498e02b12a1e3e432/ec32bbc2-e07d-4bf3-a5a7-dc5a57a2ac1d/64281489120/gHX3iJq8yNOo9%2B%2Bny5p4PPpR3Dj%2FBCUVOt4%2BOw%2FUtU4%3D"
+    },
+    {
+      "name": "Andrew's Relay",
+      "url": "https://abathon5520.osisoft.int:5470/ingress/messages",
+      "ProducerToken": "uid=b2f7bfd6-08cf-4ba7-a01c-f2749be34757&crt=20180717195947978&sig=PKn45Ypzlh6Apqr5ZUmEwToCewC//yPlEQzyCujxyZo="
+    },
+    {
+      "name": "Cody's OCS",
+      "url": "https://historianmain.osipi.com/api/omf",
+      "ProducerToken": "1/70539cbc573043428976dd8a2779363a/f97f63bc416b4bd1986e8b31bad17323/ec32bbc2-e07d-4bf3-a5a7-dc5a57a2ac1d/129225733200/%2Bp%2FFoTlg3nT%2BTCS9YMC%2BF3LcOHqxgPP%2BCbhhSktYcDs%3D"
+    }
+  ],
+
+  "VehicleName": "Codys Truck",
+  "FleetName": "SouthEastFleet"
+}
